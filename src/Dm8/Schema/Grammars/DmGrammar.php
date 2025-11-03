@@ -40,6 +40,13 @@ class DmGrammar extends Grammar
     protected $schema_prefix = '';
 
     /**
+     * Whether to use CHAR length semantics for varchar columns.
+     *
+     * @var bool
+     */
+    protected $length_in_char = false;
+
+    /**
      * If this Grammar supports schema changes wrapped in a transaction.
      *
      * @var bool
@@ -103,6 +110,26 @@ class DmGrammar extends Grammar
     public function setSchemaPrefix($prefix)
     {
         $this->schema_prefix = $prefix;
+    }
+
+    /**
+     * Get the length in char setting.
+     *
+     * @return bool
+     */
+    public function getLengthInChar()
+    {
+        return $this->length_in_char;
+    }
+
+    /**
+     * Set the length in char setting.
+     *
+     * @param  bool  $lengthInChar
+     */
+    public function setLengthInChar($length_in_char)
+    {
+        $this->length_in_char = $length_in_char;
     }
 
     /**
@@ -380,7 +407,7 @@ class DmGrammar extends Grammar
         $index = substr($command->index, 0, 30);
 
         if ($type === 'index') {
-            return "drop index {$index}";
+            return "drop index if exists {$index}";
         }
 
         return "alter table {$table} drop constraint {$index}";
@@ -395,7 +422,7 @@ class DmGrammar extends Grammar
      */
     public function compileDropUnique(Blueprint $blueprint, Fluent $command)
     {
-        return $this->dropConstraint($blueprint, $command, 'unique');
+        return $this->dropConstraint($blueprint, $command, 'index');
     }
 
     /**
@@ -479,7 +506,11 @@ class DmGrammar extends Grammar
      */
     protected function typeChar(Fluent $column)
     {
-        return "char({$column->length})";
+        $length = $column->length;
+        if ($this->length_in_char) {
+            $length .= ' char';
+        }
+        return "char({$length})";
     }
 
     /**
@@ -490,7 +521,11 @@ class DmGrammar extends Grammar
      */
     protected function typeString(Fluent $column)
     {
-        return "varchar2({$column->length})";
+        $length = $column->length;
+        if ($this->length_in_char) {
+            $length .= ' char';
+        }
+        return "varchar2({$length})";
     }
 
     /**
@@ -501,7 +536,11 @@ class DmGrammar extends Grammar
      */
     protected function typeNvarchar2(Fluent $column)
     {
-        return "nvarchar2({$column->length})";
+        $length = $column->length;
+        if ($this->length_in_char) {
+            $length .= ' char';
+        }
+        return "nvarchar2({$length})";
     }
 
     /**
@@ -637,7 +676,7 @@ class DmGrammar extends Grammar
      */
     protected function typeBoolean(Fluent $column)
     {
-        return 'tinyint(1)';
+        return 'tinyint';
     }
 
     /**
@@ -649,6 +688,9 @@ class DmGrammar extends Grammar
     protected function typeEnum(Fluent $column)
     {
         $length = ($column->length) ? $column->length : 255;
+        if ($this->length_in_char) {
+            $length .= ' char';
+        }
 
         return "varchar2({$length})";
     }
@@ -727,7 +769,11 @@ class DmGrammar extends Grammar
      */
     protected function typeUuid(Fluent $column)
     {
-        return 'char(36)';
+        $length = 36;
+        if ($this->length_in_char) {
+            $length .= ' char';
+        }
+        return "char({$length})";
     }
 
     /**
@@ -738,7 +784,11 @@ class DmGrammar extends Grammar
      */
     protected function typeIpAddress(Fluent $column)
     {
-        return 'varchar(45)';
+        $length = 45;
+        if ($this->length_in_char) {
+            $length .= ' char';
+        }
+        return "varchar({$length})";
     }
 
     /**
@@ -749,7 +799,11 @@ class DmGrammar extends Grammar
      */
     protected function typeMacAddress(Fluent $column)
     {
-        return 'varchar(17)';
+        $length = 17;
+        if ($this->length_in_char) {
+            $length .= ' char';
+        }
+        return "varchar({$length})";
     }
 
     /**
@@ -787,7 +841,8 @@ class DmGrammar extends Grammar
         $enum = '';
         if (count((array) $column->allowed)) {
             $columnName = $this->wrapValue($column->name);
-            $enum = " check ({$columnName} in ('".implode("', '", $column->allowed)."'))";
+	    $constraintName = $blueprint->getTable().'_'.$columnName.'_enum';
+            $enum = " constraint {$constraintName} check ({$columnName} in ('".implode("', '", $column->allowed)."'))";
         }
 
         $null = $column->nullable ? ' null' : ' not null';
@@ -843,3 +898,4 @@ class DmGrammar extends Grammar
         return $value !== '*' ? sprintf($this->wrapper, $value) : $value;
     }
 }
+

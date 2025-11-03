@@ -353,7 +353,10 @@ class Dm8Connection extends Connection
     public function withSchemaPrefix(Grammar $grammar)
     {
         $grammar->setSchemaPrefix($this->getConfigSchemaPrefix());
-
+	// Set length_in_char configuration for Schema Grammar
+        if ($grammar instanceof SchemaGrammar) {
+            $grammar->setLengthInChar($this->getConfigLengthInChar());
+        }
         return $grammar;
     }
 
@@ -365,6 +368,17 @@ class Dm8Connection extends Connection
     protected function getConfigSchemaPrefix()
     {
         return isset($this->config['prefix_schema']) ? $this->config['prefix_schema'] : '';
+    }
+
+
+     /**
+     * Get config length in char setting.
+     *
+     * @return bool
+     */
+    protected function getConfigLengthInChar()
+    {
+        return isset($this->config['length_in_char']) ? (bool) $this->config['length_in_char'] : false;
     }
 
     /**
