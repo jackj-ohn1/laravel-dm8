@@ -52,8 +52,7 @@ class Dm8Connection extends Connection
         parent::__construct($pdo, $database, $tablePrefix, $config);
         $this->sequence = new Sequence($this);
         $this->trigger = new Trigger($this);
-        $this->schema = $this->prepareSchema($config['username'], $database);
-        $this->setSchema($this->schema);
+        $this->setSchema($this->prepareSchema($config['username'], $database));
     }
 
     /**
