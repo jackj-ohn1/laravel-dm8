@@ -5,6 +5,7 @@ namespace LaravelDm8\Dm8\SchemaManager;
 use Illuminate\Database\Connection;
 use LaravelDm8\Dm8\Dm8Connection;
 use LaravelDm8\Dm8\SchemaManager\DmColumn;
+use LaravelDm8\Dm8\SchemaManager\DmPlatform;
 
 /**
  * DM8 Schema Manager
@@ -28,6 +29,13 @@ class DmSchemaManager
     protected $schema;
 
     /**
+     * The database platform.
+     *
+     * @var \LaravelDm8\Dm8\SchemaManager\DmPlatform
+     */
+    protected $platform;
+
+    /**
      * Create a new schema manager instance.
      *
      * @param  \Illuminate\Database\Connection  $connection
@@ -40,6 +48,17 @@ class DmSchemaManager
         } else {
             $this->schema = $connection->getConfig('database');
         }
+        $this->platform = new DmPlatform();
+    }
+
+    /**
+     * Get the database platform.
+     *
+     * @return \LaravelDm8\Dm8\SchemaManager\DmPlatform
+     */
+    public function getDatabasePlatform()
+    {
+        return $this->platform;
     }
 
     /**
@@ -64,7 +83,7 @@ class DmSchemaManager
                 FROM ALL_TAB_COLUMNS
                 WHERE OWNER = UPPER(?)
                     AND TABLE_NAME = UPPER(?)
-                ORDER BY COLUMN_ID";
+                ";
 
         $results = $this->connection->select($sql, [$this->schema, $table]);
         return $this->processColumnResults($results);
@@ -148,25 +167,45 @@ class DmSchemaManager
     public function listTableIndexes($table)
     {
         $sql = "SELECT 
-                    INDEX_NAME,
-                    UNIQUENESS,
-                    INDEX_TYPE
-                FROM ALL_INDEXES
-                WHERE TABLE_OWNER = UPPER(?)
-                    AND TABLE_NAME = UPPER(?)
-                ORDER BY INDEX_NAME";
+                i.INDEX_NAME AS index_name,
+                i.TABLE_NAME AS table_name,
+                i.UNIQUENESS AS uniqueness,
+                c.CONSTRAINT_TYPE AS constraint_type,
+                ic.COLUMN_NAME AS column_name
+            FROM 
+                DBA_INDEXES i
+                JOIN DBA_IND_COLUMNS ic ON i.INDEX_NAME = ic.INDEX_NAME AND i.OWNER = ic.INDEX_OWNER
+                LEFT JOIN DBA_CONSTRAINTS c ON i.INDEX_NAME = c.INDEX_NAME AND i.OWNER = c.OWNER
+            WHERE 
+                i.OWNER = UPPER(?)
+                AND i.TABLE_NAME = UPPER(?)
+            ";
 
         $indexes = $this->connection->select($sql, [$this->schema, strtoupper($table)]);
 
-        return array_map(function ($index) {
-            $indexName = $index->INDEX_NAME ?? $index->index_name;
-            $indexNameLower = strtolower($indexName);
-            
-            return [
-                'name' => $indexNameLower,
-                'unique' => strtoupper($index->UNIQUENESS ?? $index->uniqueness) === 'UNIQUE',
-                'type' => strtolower($index->INDEX_TYPE ?? $index->index_type),
-            ];
-        }, $indexes);
+        $results = [];
+        foreach ($indexes as $index) {
+            $index_name = $index->INDEX_NAME ?? $index->index_name;
+            if (!isset($results[$index_name])) {
+                $results[$index_name] = [
+                    'index_name' => $index_name,
+                    'is_unique' => $index->UNIQUENESS ?? $index->uniqueness === 'UNIQUE',
+                    'is_primary' => $index->CONSTRAINT_TYPE ?? $index->constraint_type === 'P',
+                    'index_columns' => [],
+                ];
+            }
+            $column_name = $index->COLUMN_NAME ?? $index->column_name;
+            $results[$index_name]['index_columns'][] = $column_name;
+        }
+        return $results;
+    }
+
+    public function listTableNames()
+    {
+        $sql = "select object_name from dba_objects where object_type='TABLE' and owner=?";
+        $results = $this->connection->select($sql, [$this->schema]);
+        return array_map(function($row) {
+            return $row->OBJECT_NAME ?? $row->object_name;
+        }, $results);
     }
 }
