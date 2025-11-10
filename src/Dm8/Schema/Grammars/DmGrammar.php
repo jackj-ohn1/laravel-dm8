@@ -365,7 +365,7 @@ class DmGrammar extends Grammar
      * @param  \Illuminate\Support\Fluent  $command
      * @return array
      */
-    public function compileChange(Blueprint $blueprint, Fluent $command)
+    public function compileChange(Blueprint $blueprint, Fluent $command, Connection $connection)
     {
         $table = $this->wrapTable($blueprint);
         $columns = [];
