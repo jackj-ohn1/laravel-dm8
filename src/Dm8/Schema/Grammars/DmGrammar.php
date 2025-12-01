@@ -413,36 +413,6 @@ class DmGrammar extends Grammar
     }
 
     /**
-     * Compile a change column command.
-     *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
-     * @param  \Illuminate\Support\Fluent  $command
-     * @return array
-     */
-    public function compileChange(Blueprint $blueprint, Fluent $command, Connection $connection)
-    {
-        $table = $this->wrapTable($blueprint);
-        $columns = [];
-
-        foreach ($blueprint->getChangedColumns() as $column) {
-            // Get the column definition (type + modifiers)
-            $sql = $this->getType($column);
-
-            // Add modifiers (nullable, default, etc.)
-            foreach ($this->modifiers as $modifier) {
-                if (method_exists($this, $method = "modify{$modifier}")) {
-                    $sql .= $this->{$method}($blueprint, $column);
-                }
-            }
-
-            // DM8 syntax: ALTER TABLE table_name MODIFY column_name definition
-            $columns[] = 'alter table '.$table.' modify '.$this->wrap($column).' '.$sql;
-        }
-
-        return $columns;
-    }
-
-    /**
      * Compile a primary key command.
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
