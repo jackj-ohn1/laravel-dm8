@@ -85,19 +85,21 @@ class DmGrammar extends Grammar
                     continue;
                 }
                 
-                // Set default value for NOT NULL columns that are not auto-increment and have no default
-                // Check if column is NOT NULL, not auto-increment, and has no explicit default
+                // 具有这几个属性不会自动设置default值: null, auto_increment, primary, default
                 if (! $column->nullable &&
                     ! ($column->autoIncrement ?? false) &&
                     ! ($column->primary ?? false) &&
                     ! in_array(strtolower($column->name), $primaryColumns, true) &&
                     is_null($column->default)) {
                     
-                    // Get the actual database type (after transformation via typeXxx methods)
-                    $defaultValue = $this->getDefaultValueForType($this->getType($column));
-                    if ($defaultValue !== null) {
-                        $column->default = $defaultValue;
-                    }
+                        if ($column->type === 'enum' && !empty($column->allowed)) {
+                            $column->default = $column->allowed[0];
+                        } else {
+                            $defaultValue = $this->getDefaultValueForType($this->getType($column));
+                            if ($defaultValue !== null) {
+                                $column->default = $defaultValue;
+                            }
+                        }
                 }
             }
         }
@@ -904,7 +906,7 @@ class DmGrammar extends Grammar
      */
     protected function typeBoolean(Fluent $column)
     {
-        return 'tinyint';
+        return 'bit';
     }
 
     /**
