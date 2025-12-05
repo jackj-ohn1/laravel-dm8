@@ -78,27 +78,49 @@ class DmGrammar extends Grammar
             $query->columns = ['*'];
         }
 
-        $components = $this->compileComponents($query);
+        $restore_unions = null;
+        if ($query->unions) {
+            $restore_unions = $query->unions;
+            $query->unions = null;
+        }
 
-        // To compile the query, we'll spin through each component of the query and
-        // see if that component exists. If it does we'll just call the compiler
-        // function for the component which is responsible for making the SQL.
-        $sql = trim($this->concatenate($components));
+        $components = $this->compileComponents($query);
 
         // If an offset is present on the query, we will need to wrap the query in
         // a big "ANSI" offset syntax block. This is very nasty compared to the
         // other database systems but is necessary for implementing features.
+        // 分页需要特殊处理
         if ($this->isPaginationable($query, $components)) {
-            return $this->compileAnsiOffset($query, $components);
+            $sql = $this->compileAnsiOffset($query, $components);
+        } else {
+            // To compile the query, we'll spin through each component of the query and
+            // see if that component exists. If it does we'll just call the compiler
+            // function for the component which is responsible for making the SQL.
+            // 非分页时，直接拼接
+            $sql = trim($this->concatenate($components));
         }
-
-        if ($query->unions) {
+        
+        // 如果有union，需要特殊处理
+        if ($restore_unions) {
+            $query->unions = $restore_unions;
             $sql = $this->wrapUnion($sql).' '.$this->compileUnions($query);
         }
 
         $query->columns = $original;
 
         return $sql;
+    }
+    
+
+    /**
+     * Wrap the initial select when unions exist.
+     *
+     * @param  string  $sql
+     * @return string
+     */
+    protected function wrapUnion($sql)
+    {
+        return '('.$sql.')';
     }
 
     /**
@@ -574,6 +596,19 @@ class DmGrammar extends Grammar
         }
 
         return '('.$whereClause.')';
+    }
+
+    /**
+     * Compile a single union statement.
+     *
+     * @param  array  $union
+     * @return string
+     */
+    protected function compileUnion(array $union)
+    {
+        $conjunction = $union['all'] ? ' union all ' : ' union ';
+
+        return $conjunction.'('.$union['query']->toSql().')';
     }
 
     /**
