@@ -86,19 +86,7 @@ class DmGrammar extends Grammar
 
         $components = $this->compileComponents($query);
 
-        // If an offset is present on the query, we will need to wrap the query in
-        // a big "ANSI" offset syntax block. This is very nasty compared to the
-        // other database systems but is necessary for implementing features.
-        // 分页需要特殊处理
-        if ($this->isPaginationable($query, $components)) {
-            $sql = $this->compileAnsiOffset($query, $components);
-        } else {
-            // To compile the query, we'll spin through each component of the query and
-            // see if that component exists. If it does we'll just call the compiler
-            // function for the component which is responsible for making the SQL.
-            // 非分页时，直接拼接
-            $sql = trim($this->concatenate($components));
-        }
+        $sql = trim($this->concatenate($components));
         
         // 如果有union，需要特殊处理
         if ($restore_unions) {
@@ -492,7 +480,7 @@ class DmGrammar extends Grammar
      */
     protected function compileLimit(Builder $query, $limit)
     {
-        return '';
+        return $limit > 0 ? "limit $limit" : '';
     }
 
     /**
@@ -504,7 +492,7 @@ class DmGrammar extends Grammar
      */
     protected function compileOffset(Builder $query, $offset)
     {
-        return '';
+        return $offset > 0 ? "offset $offset" : '';
     }
 
     /**
