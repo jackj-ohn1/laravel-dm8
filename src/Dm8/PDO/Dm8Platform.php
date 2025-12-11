@@ -23,11 +23,24 @@ class Dm8Platform extends OraclePlatform
     }
 
     /**
-     * Override to return empty string, so identifiers are not quoted.
+     * Override to return double quote character for identifier quoting.
      */
     public function getIdentifierQuoteCharacter()
     {
-        return '';
+        return '"';
+    }
+
+    /**
+     * Override to add CHAR suffix for VARCHAR2 and CHAR types.
+     * This ensures character length is measured in characters, not bytes.
+     * 
+     * {@inheritDoc}
+     */
+    protected function getVarcharTypeDeclarationSQLSnippet($length, $fixed)
+    {
+        return $fixed 
+            ? ($length ? 'CHAR(' . $length . ' CHAR)' : 'CHAR(2000 CHAR)')
+            : ($length ? 'VARCHAR2(' . $length . ' CHAR)' : 'VARCHAR2(4000 CHAR)');
     }
 
     /**
