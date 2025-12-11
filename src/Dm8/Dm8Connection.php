@@ -48,6 +48,10 @@ class Dm8Connection extends Connection
      */
     public function __construct($pdo, $database = '', $tablePrefix = '', array $config = [])
     {
+        // 有的地方直接用prefix_schema作为database，需要处理一下
+        if (!isset($config['prefix_schema']) || empty($config['prefix_schema'])) {
+            $config['prefix_schema'] = $database;
+        }
         parent::__construct($pdo, $database, $tablePrefix, $config);
         $this->sequence = new Sequence($this);
         $this->trigger = new Trigger($this);
@@ -368,7 +372,7 @@ class Dm8Connection extends Connection
      */
     protected function getConfigSchemaPrefix()
     {
-        return isset($this->config['prefix_schema']) ? $this->config['prefix_schema'] : '';
+        return isset($this->config['prefix_schema']) ? $this->config['prefix_schema'] : $this->config['database'];
     }
 
     /**
@@ -378,7 +382,7 @@ class Dm8Connection extends Connection
      */
     protected function getConfigLengthInChar()
     {
-        return isset($this->config['length_in_char']) ? (bool) $this->config['length_in_char'] : false;
+        return isset($this->config['length_in_char']) ? (bool) $this->config['length_in_char'] : true;
     }
 
     /**

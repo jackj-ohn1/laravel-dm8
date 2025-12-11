@@ -906,7 +906,8 @@ class DmGrammar extends Grammar
      */
     protected function typeBoolean(Fluent $column)
     {
-        return 'bit';
+        // bool类型必须是tinyint，能和true/false比较
+        return 'tinyint';
     }
 
     /**
