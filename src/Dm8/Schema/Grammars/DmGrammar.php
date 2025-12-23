@@ -136,8 +136,8 @@ class DmGrammar extends Grammar
             return '{}';
         }
         
-        // Integer types - default to 0
-        $integerTypes = [
+        // Number types - default to 0
+        $numberTypes = [
             // int
             'integer', 'int', 'bigint','smallint', 'tinyint',
             // float
@@ -147,7 +147,7 @@ class DmGrammar extends Grammar
             // byte
             'bit', 'byte'
         ];
-        if (in_array($normalizedType, $integerTypes)) {
+        if (in_array($normalizedType, $numberTypes)) {
             return 0;
         }
         
@@ -787,7 +787,7 @@ class DmGrammar extends Grammar
      */
     protected function typeLongText(Fluent $column)
     {
-        return 'text';
+        return 'longtext';
     }
 
     /**
@@ -895,7 +895,16 @@ class DmGrammar extends Grammar
      */
     protected function typeDecimal(Fluent $column)
     {
-        return "decimal({$column->total}, {$column->places})";
+        if ($column->total) {
+            $return_type = "decimal({$column->total}";
+            if ($column->places) {
+                $return_type .= ", {$column->places})";
+            } else {
+                $return_type .= ")";
+            }
+            return $return_type;
+        }
+        return "decimal";
     }
 
     /**
@@ -940,7 +949,7 @@ class DmGrammar extends Grammar
      */
     protected function typeDateTime(Fluent $column)
     {
-        return 'date';
+        return 'datetime';
     }
 
     /**
@@ -951,7 +960,7 @@ class DmGrammar extends Grammar
      */
     protected function typeTime(Fluent $column)
     {
-        return 'date';
+        return 'time';
     }
 
     /**
