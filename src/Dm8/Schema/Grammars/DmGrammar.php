@@ -1101,8 +1101,14 @@ class DmGrammar extends Grammar
     protected function modifyIncrement(Blueprint $blueprint, Fluent $column)
     {
         if (in_array($column->type, $this->serials) && $column->autoIncrement) {
-            $blueprint->primary($column->name);
-            return ' auto_increment';
+            $primaryCommand = $this->getCommandByName($blueprint, 'primary');
+            
+            if (empty($primaryCommand)) {
+                $blueprint->primary($column->name);
+                return ' auto_increment';
+            }
+            
+            return ' identity(1, 1)';
         }
     }
 
