@@ -52,7 +52,7 @@ class Dm8Connection extends Connection
         $this->sequence = new Sequence($this);
         $this->trigger = new Trigger($this);
         $this->setSchema($database);
-        $this->setDateFormat('YYYY-MM-DD HH24:MI:SS');
+        $this->setDateFormat();
     }
 
     /**
@@ -182,11 +182,11 @@ class Dm8Connection extends Connection
      * @param  string  $format
      * @return $this
      */
-    public function setDateFormat($format = 'YYYY-MM-DD HH24:MI:SS')
+    public function setDateFormat()
     {
         $sessionVars = [
-            'NLS_DATE_FORMAT'      => $format,
-            'NLS_TIMESTAMP_FORMAT' => $format,
+            'NLS_DATE_FORMAT'      => 'YYYY-MM-DD',
+            'NLS_TIMESTAMP_FORMAT' => 'YYYY-MM-DD HH24:MI:SS',
         ];
 
         return $this->setSessionVars($sessionVars);
