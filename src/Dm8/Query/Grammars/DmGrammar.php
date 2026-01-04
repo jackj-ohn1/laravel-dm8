@@ -25,6 +25,17 @@ class DmGrammar extends Grammar
     protected $schema_prefix = '';
 
     /**
+     * Compile the random statement into SQL.
+     *
+     * @param  string  $seed
+     * @return string
+     */
+    public function compileRandom($seed)
+    {
+        return 'RAND()';
+    }
+
+    /**
      * Compile a delete statement with joins into SQL.
      *
      * @param  \Illuminate\Database\Query\Builder  $query
