@@ -121,7 +121,7 @@ class DmGrammar extends Grammar
         
         // String types - default to empty string
         $stringTypes = [
-            'string', 'text', 'longvarchar',
+            'string', 'text', 'longtext', 'long', 'longvarchar',
             'char', 'varchar', 'varchar2', 'nvarchar2', 'nvarchar', 
         ];
         if (in_array($normalizedType, $stringTypes)) {
@@ -133,7 +133,7 @@ class DmGrammar extends Grammar
             'json', 'jsonb'
         ];
         if (in_array($normalizedType, $jsonTypes)) {
-            return '{}';
+            return '';
         }
         
         // Number types - default to 0
@@ -152,16 +152,15 @@ class DmGrammar extends Grammar
         }
         
         // Date/time types - return null to use database default
-        if (in_array($normalizedType, ['datetime', 'timestamp', 'timestamp time zone', 'timestamp with timezone', 'timestamp with local time zone'])) {
-            return '1970-01-01 00:00:00';
+        if (in_array($normalizedType, ['datetime', 'timestamp', 'timestamp time zone', 'timestamp with time zone', 'timestamp with local time zone'])) {
+            return '0000-01-01 00:00:00';
         } else if ($normalizedType == 'date') {
-            return '1970-01-01';
+            return '0000-01-01';
         } else if ($normalizedType == 'time') {
             return '00:00:00';
-        } else if ($normalizedType == 'year') {
-            return '1970';
         } else if (strpos($normalizedType, 'time') !== false || strpos($normalizedType, 'date') !== false) {
-            return '1970-01-01 00:00:00';
+            // 通用的默认值
+            return '0000-01-01 00:00:00';
         }
         
         // Binary types - return null
