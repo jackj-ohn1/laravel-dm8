@@ -133,7 +133,10 @@ class DmGrammar extends Grammar
             'json', 'jsonb'
         ];
         if (in_array($normalizedType, $jsonTypes)) {
-            return '';
+            // 还是需要设置空对象
+            // 达梦在创建时支持设置空字符串为默认值，alter就不行......
+            // 不能直接设置{}，如果unmarshal时是一个[]会报错，所以这里先不设置默认值
+            return null;
         }
         
         // Number types - default to 0
