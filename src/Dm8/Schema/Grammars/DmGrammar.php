@@ -155,15 +155,16 @@ class DmGrammar extends Grammar
         }
         
         // Date/time types - return null to use database default
+        // 即使设置了0000-01-1，也会被转换为0001-01-01，为了避免歧义，统一设置成0001-01-01
         if (in_array($normalizedType, ['datetime', 'timestamp', 'timestamp time zone', 'timestamp with time zone', 'timestamp with local time zone'])) {
-            return '0000-01-01 00:00:00';
+            return '0001-01-01 00:00:00';
         } else if ($normalizedType == 'date') {
-            return '0000-01-01';
+            return '0001-01-01';
         } else if ($normalizedType == 'time') {
             return '00:00:00';
         } else if (strpos($normalizedType, 'time') !== false || strpos($normalizedType, 'date') !== false) {
             // 通用的默认值
-            return '0000-01-01 00:00:00';
+            return '0001-01-01 00:00:00';
         }
         
         // Binary types - return null
@@ -800,6 +801,9 @@ class DmGrammar extends Grammar
      */
     protected function typeInteger(Fluent $column)
     {
+        if ($column->unsigned ?? false) {
+            return $this->wrapUnsignedInteger('int');
+        }
         return 'int';
     }
 
@@ -811,6 +815,9 @@ class DmGrammar extends Grammar
      */
     protected function typeBigInteger(Fluent $column)
     {
+        if ($column->unsigned ?? false) {
+            return $this->wrapUnsignedInteger('bigint');
+        }
         return 'bigint';
     }
 
@@ -822,6 +829,9 @@ class DmGrammar extends Grammar
      */
     protected function typeMediumInteger(Fluent $column)
     {
+        if ($column->unsigned ?? false) {
+            return $this->wrapUnsignedInteger('int');
+        }
         return 'int';
     }
 
@@ -833,6 +843,9 @@ class DmGrammar extends Grammar
      */
     protected function typeSmallInteger(Fluent $column)
     {
+        if ($column->unsigned ?? false) {
+            return $this->wrapUnsignedInteger('smallint');
+        }
         return 'smallint';
     }
 
@@ -844,6 +857,9 @@ class DmGrammar extends Grammar
      */
     protected function typeTinyInteger(Fluent $column)
     {
+        if ($column->unsigned ?? false) {
+            return $this->wrapUnsignedInteger('tinyint');
+        }
         return 'tinyint';
     }
 
@@ -1139,5 +1155,22 @@ class DmGrammar extends Grammar
     protected function wrapCharType($type, $length)
     {
         return $this->length_in_char ? $type.'('.$length.' char)' : $type.'('.$length.')';
+    }
+
+    protected function wrapUnsignedInteger(string $type) {
+        switch ($type) {
+            case 'byte':
+                return 'tinyint';
+            case 'tinyint':
+                return 'smallint';
+            case 'smallint':
+                return 'int';
+            case 'int':
+                return 'bigint';
+            case 'bigint':
+                return 'bigint';
+            default:
+                return $type;
+        }
     }
 }
