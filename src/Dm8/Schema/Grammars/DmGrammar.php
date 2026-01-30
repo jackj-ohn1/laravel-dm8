@@ -1055,7 +1055,11 @@ class DmGrammar extends Grammar
      */
     protected function typeJson(Fluent $column)
     {
-        return 'json';
+        // 不同版本的达梦对于json的处理方式不同，这里统一使用text类型
+        // 已知dm:202505，json会映射成clob字段
+        // 已知dm:202511，json会映射成blob字段
+        // 一个文本字段一个二进制字段，跨度太大，所以默认就用text类型
+        return 'text';
     }
 
     /**
@@ -1066,7 +1070,7 @@ class DmGrammar extends Grammar
      */
     protected function typeJsonb(Fluent $column)
     {
-        return 'jsonb';
+        return 'text';
     }
 
     /**
